@@ -396,8 +396,9 @@
 ;; Problem 2
 (define encrypt-and-sign
   (lambda ((str <string>) (rpub <key>) (spri <key>))
-    
-   ))
+    (let ((msg (rsa-encrypt str rpub)))
+      (let ((sig (rsa-transform (compress msg rpub) spri)))
+    (make-signed-message msg sig)))))
 
 
 (define result-2
@@ -406,6 +407,22 @@
                        (key-pair-private test-key-1)))
 (signed-message-body result-2)
 (signed-message-signature result-2)
+
+(define decrypt-and-verify
+  (lambda ((msg <signed-message>) (rpri <key>) (spub <key>))
+    (let ((Dh (signed-message-signature msg))
+          (h (compress (signed-message-body msg) spub)))
+      (if (= (rsa-transform Dh spub) h)
+          (rsa-decrypt (signed-message-body msg) rpri)
+          #f))))
+
+(decrypt-and-verify result-2 
+                     (key-pair-private test-key-2)
+                     (key-pair-public test-key-1))
+
+(decrypt-and-verify result-2
+                     (key-pair-private test-key-1)
+                     (key-pair-public test-key-2))
 
 ;; Problem 3
 
