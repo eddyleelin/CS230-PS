@@ -425,7 +425,30 @@
                      (key-pair-public test-key-2))
 
 ;; Problem 3
+(define crack-rsa
+  (lambda ((pubkey <key>))
+    (let* ((n (key-modulus pubkey))
+           (e (key-exponent pubkey))
+           (p (smallest-divisor n))
+           (q (/ n p))
+           (m (* (- p 1) (- q 1)))
+           (a (car (euclid e m)))
+           (d (modulo a m)))
+      (make-key d n)
+      )))
+
+(crack-rsa (key-pair-public test-key-1))
+(crack-rsa (key-pair-public test-key-2))
+
+(crack-rsa (make-key 1763 132731))
+(crack-rsa (make-key 19883 159197))
+(crack-rsa (make-key 25639 210281))
 
 ;; Problem 4
+(define identify-sender
+  (lambda ((msg <signed-message>) (lst <list>))
+    (decrypt-and-verify msg (crack-rsa Anna) Graham)))
+
+(identify-sender secret-message (list Anna Graham Vinit Joyce Caspar))
 
 ;; Problem 5
