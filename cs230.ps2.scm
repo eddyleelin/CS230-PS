@@ -369,29 +369,27 @@
         (let loop ((rst lst) (prev 0))
           (cond ((null? rst) rst)
                 (else
-                 (let ((cur (- (rsa-transform (car rst) key) prev))
+                 (let ((cur (modulo (- (rsa-transform (car rst) key) prev) n))
                        (sub (car rst)))
 		 (cons cur 
                        (loop (cdr rst) sub)))))))))
-#|
+
 ;; testing
 (rsa-unconvert-list result-1 (key-pair-private test-key-1))
 ; (14949 14836 4205 13043 14817 13285)
-
+"uncovert OUTPUT-------------------------------"
 (rsa-decrypt result-1 (key-pair-private test-key-1))
 ; "test message"
 
 (define sample-key-1 (generate-rsa-key-pair 16))
 (define sample-1
-     (rsa-encrypt "nathan kim" (key-pair-public sample-key-1)))
+     (rsa-encrypt "nathan kim!!!!!!!" (key-pair-public sample-key-1)))
 (rsa-decrypt sample-1 (key-pair-private sample-key-1))
 
 (define sample-key-2 (generate-rsa-key-pair 16))
 (define sample-2
      (rsa-encrypt "eddy liiiiiiiiiiiiiiiiiiin yayyyyyyyyyyyyyyy" (key-pair-public sample-key-2)))
 (rsa-decrypt sample-2 (key-pair-private sample-key-2))
-
-|#
 
 ;; Problem 2
 (define encrypt-and-sign
@@ -400,7 +398,7 @@
       (let ((sig (rsa-transform (compress msg rpub) spri)))
     (make-signed-message msg sig)))))
 
-
+"signed message OUTPUT-------------------------------"
 (define result-2
      (encrypt-and-sign "Test message from User 1 to User 2"
                        (key-pair-public test-key-2)
@@ -416,6 +414,7 @@
           (rsa-decrypt (signed-message-body msg) rpri)
           #f))))
 
+"decrypt-and-verify OUTPUT-------------------------------"
 (decrypt-and-verify result-2 
                      (key-pair-private test-key-2)
                      (key-pair-public test-key-1))
@@ -437,6 +436,7 @@
       (make-key d n)
       )))
 
+"crack-rsa OUTPUT-------------------------------"
 (crack-rsa (key-pair-public test-key-1))
 (crack-rsa (key-pair-public test-key-2))
 
@@ -450,7 +450,7 @@
     (let ((rpub (car lst))
            (spub (cdr lst)))
       (decrypt-and-verify msg (crack-rsa rpub) spub))))
-
+#|
 ;; Test check-sender-recipient procedure
 (check-sender-recipient result-2 
                      (make-key-pair (key-pair-public test-key-2)
@@ -480,11 +480,9 @@
 (check-sender-recipient secret-message (make-key-pair Caspar Vinit))
 (check-sender-recipient secret-message (make-key-pair Caspar Joyce))
 
-#|(define identify-sender
-  (lambda ((msg <signed-message>) (lst <list>))
-    (map (lambda (x)
-           (map (lambda (y) (check-sender-recipient x y)
 |#
+"Secret message from Vinit to Joyce OUTPUT-------------------------------"
+(check-sender-recipient secret-message (make-key-pair Vinit Joyce))
 
 ;; (identify-sender secret-message (list Anna Graham Vinit Joyce Caspar))
 
