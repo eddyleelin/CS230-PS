@@ -445,10 +445,47 @@
 (crack-rsa (make-key 25639 210281))
 
 ;; Problem 4
-(define identify-sender
-  (lambda ((msg <signed-message>) (lst <list>))
-    (decrypt-and-verify msg (crack-rsa Anna) Graham)))
+(define check-sender-recipient
+  (lambda ((msg <signed-message>) (lst <pair>))
+    (let ((rpub (car lst))
+           (spub (cdr lst)))
+      (decrypt-and-verify msg (crack-rsa rpub) spub))))
 
-(identify-sender secret-message (list Anna Graham Vinit Joyce Caspar))
+;; Test check-sender-recipient procedure
+(check-sender-recipient result-2 
+                     (make-key-pair (key-pair-public test-key-2)
+                     (key-pair-public test-key-1)))
+
+"Anna"
+(check-sender-recipient secret-message (make-key-pair Anna Graham))
+(check-sender-recipient secret-message (make-key-pair Anna Vinit))
+(check-sender-recipient secret-message (make-key-pair Anna Joyce))
+(check-sender-recipient secret-message (make-key-pair Anna Caspar))
+
+"Vinit"
+(check-sender-recipient secret-message (make-key-pair Vinit Anna))
+(check-sender-recipient secret-message (make-key-pair Vinit Graham))
+(check-sender-recipient secret-message (make-key-pair Vinit Joyce))
+(check-sender-recipient secret-message (make-key-pair Vinit Caspar))
+
+"Joyce"
+(check-sender-recipient secret-message (make-key-pair Joyce Anna))
+(check-sender-recipient secret-message (make-key-pair Joyce Graham))
+(check-sender-recipient secret-message (make-key-pair Joyce Vinit))
+(check-sender-recipient secret-message (make-key-pair Joyce Caspar))
+
+"Caspar"
+(check-sender-recipient secret-message (make-key-pair Caspar Anna))
+(check-sender-recipient secret-message (make-key-pair Caspar Graham))
+(check-sender-recipient secret-message (make-key-pair Caspar Vinit))
+(check-sender-recipient secret-message (make-key-pair Caspar Joyce))
+
+#|(define identify-sender
+  (lambda ((msg <signed-message>) (lst <list>))
+    (map (lambda (x)
+           (map (lambda (y) (check-sender-recipient x y)
+|#
+
+;; (identify-sender secret-message (list Anna Graham Vinit Joyce Caspar))
 
 ;; Problem 5
