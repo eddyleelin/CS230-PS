@@ -487,3 +487,23 @@
 ;; (identify-sender secret-message (list Anna Graham Vinit Joyce Caspar))
 
 ;; Problem 5
+(define smallest-divisor
+  (lambda ((n <integer>))
+    (if (even? n)
+	2
+	(let ((sqrt-n (floor (sqrt n))))
+	  (let loop ((try 3))
+	    (cond ((> try sqrt-n) n)        ; stop if we get to sqrt(n)
+		  ((divides? try n) try)    ; stop if we find a divisor
+		  (else
+		   (loop (+ try 2)))))))))  ; try the next odd divisor
+
+(define pollard
+  (lambda ((n <integer>) (base <integer>) (max <integer>))
+    (let loop ((k 1) (last-fac 1))
+      (cond ((= k max) #f)
+            (else
+             (let* ((k-fac (* k last-fac))
+                    (r (exptmod base k-fac n)))
+               (loop (+ k 1) k-fac))
+             )))))
