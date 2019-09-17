@@ -487,23 +487,51 @@
 ;; (identify-sender secret-message (list Anna Graham Vinit Joyce Caspar))
 
 ;; Problem 5
-(define smallest-divisor
-  (lambda ((n <integer>))
-    (if (even? n)
-	2
-	(let ((sqrt-n (floor (sqrt n))))
-	  (let loop ((try 3))
-	    (cond ((> try sqrt-n) n)        ; stop if we get to sqrt(n)
-		  ((divides? try n) try)    ; stop if we find a divisor
-		  (else
-		   (loop (+ try 2)))))))))  ; try the next odd divisor
-
 (define pollard
   (lambda ((n <integer>) (base <integer>) (max <integer>))
-    (let loop ((k 1) (last-fac 1))
-      (cond ((= k max) #f)
+    (let loop ((k 1) (last-base base))
+      (cond ((> k max) #f)
             (else
-             (let* ((k-fac (* k last-fac))
-                    (r (exptmod base k-fac n)))
-               (loop (+ k 1) k-fac))
-             )))))
+             (let* ((r (exptmod last-base k n))
+                    (d (car (cdr (cdr (euclid (- r 1) n))))))
+               (cond ((= d 1) (loop (+ k 1) r))
+                     ((= d n) (loop (+ k 1) r))
+                     (else d))))))))
+
+#|
+"Pollard test OUTPUT-------------------------------"
+(pollard 29958343 2 20)                
+(pollard 13549648109 3 150)          
+(pollard 5157437 2 7)           
+(pollard 5157437 2 9)
+(pollard 34297190193172563733 3 35000)
+|#
+
+"BIG Pollard OUTPUTS"
+(pollard 39173679876983836729 3 3000)
+(pollard 2278570691794489592002651 2 27000)
+
+;; Extra Credit
+(define crack-rsa-2
+  (lambda ((pubkey <key>) (base <integer>) (max <integer>))
+    (let* ((n (key-modulus pubkey))
+           (e (key-exponent pubkey))
+           (p (pollard n base max)))
+      (if (not p) #f
+          (let*
+              ((q (/ n p))
+               (m (* (- p 1) (- q 1)))
+               (a (car (euclid e m)))
+               (d (modulo a m)))
+            (make-key d n))))))
+#|
+"crack-rsa-2 test OUTPUT-------------------------------"
+(crack-rsa-2 (key-pair-public big-key-1) 2 10000)
+(crack-rsa-2 (key-pair-public big-key-2) 2 10000)
+(crack-rsa-2 (key-pair-public big-key-2) 2 20000)
+|#
+
+"crack-rsa-2 OUTPUT-------------------------------"
+(crack-rsa-2 (make-key 37 9709644929798597233) 2 15000)
+(crack-rsa-2 (make-key 3841 15873420455170035847) 2 10000)
+(crack-rsa-2 (make-key 17333 47126568369600710999) 2 10000)
