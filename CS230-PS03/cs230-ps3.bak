@@ -151,45 +151,17 @@
 
 ;; ----- Problem 1 -----
 
-(define exits
-  (lambda (v G)
-    (foldr (lambda (new l)
-             (cons (finish new) l))
-           `()
-           (filter
-            (lambda (edge)
-              (equal-vertex? (start edge) v))
-            (edges G)))))
-                                 
-    
+;(define g1 (make-graph '(a b c d e) 
+;		       '((a b) (a c) (b c) (b e) (c d) (d b))))
 
-(define g1 (make-graph '(a b c d e) 
-		       '((a b) (a c) (b c) (b e) (c d) (d b))))
+; (name-vertices (exits (lookup-vertex 'b (vertices g1)) g1))
 
-(name-vertices (exits (lookup-vertex 'b (vertices g1)) g1))
-
-(name-vertices (exits (lookup-vertex 'e (vertices g1)) g1))
-
-
-(define verify-path
-  (lambda (g lst)
-    (cond ((null? lst) #t) ;if no more in lst, it works
-          ;((not (lookup-vertex (car lst) (vertices g))) #f) ;if the first vertex isn't in g
-          ((null? (cdr lst)) ;if only one vertex in lst
-           (if (lookup-vertex (car lst) (vertices g)) ;see if vertex exists
-               #t #f))
-          ((not (member-vertices (car (cdr lst))
-                                 (exits (car lst) g)))
-           #f)
-          (else
-           (verify-path g (cdr lst))))))
-
-(verify-path g1 
-   (map (lambda (x) (lookup-vertex x (vertices g1))) '(a b c d b e)))
+;(verify-path g1 
+;   (map (lambda (x) (lookup-vertex x (vertices g1))) '(a b c d b e)))
 ; ==> #t
   
-(verify-path g1 
-   (map (lambda (x) (lookup-vertex x (vertices g1))) '(a b c d e)))
+;(verify-path g1 
+;   (map (lambda (x) (lookup-vertex x (vertices g1))) '(a b c d e)))
 ; ==> #f
   
 ;; ----- Problem 2 -----
@@ -314,4 +286,3 @@
 ; (name-vertices (find-path 'd 'd g3)) ==> (d)
 ; (find-path 'a 'd g3)                    ==> #f
 ; (name-vertices (find-path 'b 'd g4)) ==> (b a d)
-
