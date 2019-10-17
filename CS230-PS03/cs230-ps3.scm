@@ -173,11 +173,9 @@
 
 (define verify-path
   (lambda (g lst)
-    (cond ((null? lst) #t) ;if no more in lst, it works
-          ;((not (lookup-vertex (car lst) (vertices g))) #f) ;if the first vertex isn't in g
-          ((null? (cdr lst)) ;if only one vertex in lst
-           (if (lookup-vertex (car lst) (vertices g)) ;see if vertex exists
-               #t #f))
+    (cond ((or (null? lst) ;if no more in lst, it works
+               (null? (cdr lst)))
+           #t)
           ((not (member-vertices (car (cdr lst))
                                  (exits (car lst) g)))
            #f)
