@@ -300,20 +300,37 @@
 ;; ----- Problem 5 -----
 (define step-nfa
   (lambda (dfa states input)
-    (foldr (lambda ()
+    (foldr (lambda (edge l)
+             (if (= (label edge) input) (cons (finish edge) l)))
            `() 
-           (filter
-            (lambda (edge)
-              (eq? (name (start edge)) state))
+           (foldr
+            (lambda (edge l)
+              (if (member? (name (start edge)) states) (cons edge l)))
+            `()
             (edges dfa)))))
 
 
-;(define nfa1
-;  (make-automaton '(a b c d e)
-;	    '((a a 0) (a a 1) (a b 1) (a c 0) (b d 1) (c e 0)
-;	      (d d 0) (d d 1) (e e 0) (e e 1))
-;	    'a
-;	    '(d e)))
+;; THIS HASN'T BEEN CHANGED AT ALL SINCE SIMULATE-DFA
+;; THIS HASN'T BEEN CHANGED AT ALL SINCE SIMULATE-DFA
+;; THIS HASN'T BEEN CHANGED AT ALL SINCE SIMULATE-DFA
+;; THIS HASN'T BEEN CHANGED AT ALL SINCE SIMULATE-DFA
+(define simulate-nfa
+  (lambda (dfa lst)
+    (letrec ((loop
+             (lambda (state inputs)
+               (cond ((null? inputs)
+                      (if (member? state (final-states dfa)) #t #f))
+                     ;((not (step-dfa dfa state (car inputs))) #f)
+                     (else
+                      (loop (name (step-dfa dfa state (car inputs))) (cdr inputs)))))))
+      (loop (start-state dfa) lst))))
+
+(define nfa1
+  (make-automaton '(a b c d e)
+	    '((a a 0) (a a 1) (a b 1) (a c 0) (b d 1) (c e 0)
+	      (d d 0) (d d 1) (e e 0) (e e 1))
+	    'a
+	    '(d e)))
             
 ;; ----- Problem 6 -----
 
