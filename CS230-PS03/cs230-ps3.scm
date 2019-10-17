@@ -173,8 +173,9 @@
 
 (define verify-path
   (lambda (g lst)
-    (cond ((or (null? lst) ;if no more in lst, it works
-               (null? (cdr lst)))
+    (cond ((null? lst) #t) ;if no more in lst, it works
+          ((not (member-vertices (car lst) (vertices g))) #f)
+          ((null? (cdr lst))
            #t)
           ((not (member-vertices (car (cdr lst))
                                  (exits (car lst) g)))
@@ -246,24 +247,46 @@
             'a '(a)))
 
 ;;; ----- Problem 3 -----
+(define step-dfa
+  (lambda (dfa state input)
+    (let ((dfa-exits (filter (lambda (edge) (= (label edge) input))
+                             (filter
+                              (lambda (edge)
+                                (eq? (name (start edge)) state))
+                              (edges dfa)))))
+      (if (not (= (length dfa-exits) 1)) #f
+          (finish (car dfa-exits))
+          ))))
 
-; (step-dfa dfa1 'c 1) ==> c
-; (step-dfa dfa1 'd 0) ==> #f
-; (step-dfa dfa1 'a 0) ==> a
-; (step-dfa dfa1 'a 1) ==> b
-; (step-dfa dfa1 'a 2) ==> #f
+(step-dfa dfa1 'c 1) ; ==> c
+(step-dfa dfa1 'd 0) ;==> #f
+(step-dfa dfa1 'a 0) ;==> a
+(step-dfa dfa1 'a 1) ;==> b
+(step-dfa dfa1 'a 2) ;==> #f
 
-;(define bad-dfa
-;  (make-automaton '(a b c) 
-; 	    '((a a 0) (a b 0) (b a 1) (b c 0) (c b 0) (c c 1))
-;            'a '(a)))
+(define bad-dfa
+  (make-automaton '(a b c) 
+ 	    '((a a 0) (a b 0) (b a 1) (b c 0) (c b 0) (c c 1))
+            'a '(a)))
 
-; (step-dfa bad-dfa 'a 0) ==> #f
+(step-dfa bad-dfa 'a 0); ==> #f
 
 ;; ----- Problem 4 -----
 
-; (simulate-dfa dfa1 '(1 0 0 1)) ==> #t
-; (simulate-dfa dfa1 '(1 0 1 1)) ==> #f
+(define simulate-dfa
+  (lambda (dfa lst)
+    (letrec ((loop
+             (lambda (state inputs)
+               (cond ((null? inputs)
+                      (if (member? state (final-states dfa)) #t #f))
+                     ;((not (step-dfa dfa state (car inputs))) #f)
+                     (else
+                      (loop (name (step-dfa dfa state (car inputs))) (cdr inputs)))))))
+      (loop (start-state dfa) lst))))
+                          
+         
+ (simulate-dfa dfa1 '(1 0 0 1)) ;==> #t
+ (simulate-dfa dfa1 '(1 0 1 1)) ;==> #f
 
 (define integer->binary
   (lambda (n)
