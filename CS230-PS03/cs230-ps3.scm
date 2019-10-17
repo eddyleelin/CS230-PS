@@ -240,10 +240,10 @@
             :start-state s-state
             :final-states f-states))))
 
-;(define dfa1
-;  (make-automaton '(a b c) 
-;	    '((a a 0) (a b 1) (b a 1) (b c 0) (c b 0) (c c 1))
-;            'a '(a)))
+(define dfa1
+  (make-automaton '(a b c) 
+	    '((a a 0) (a b 1) (b a 1) (b c 0) (c b 0) (c c 1))
+            'a '(a)))
 
 ;;; ----- Problem 3 -----
 
