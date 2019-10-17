@@ -294,10 +294,19 @@
 	  (else (append (integer->binary (quotient n 2)) 
                         (list (if (even? n) 0 1)))))))
           
-; (simulate-dfa dfa1 (integer->binary 12))
-; (simulate-dfa dfa1 (integer->binary 10))
+ (simulate-dfa dfa1 (integer->binary 12))
+ (simulate-dfa dfa1 (integer->binary 10))
 
 ;; ----- Problem 5 -----
+(define step-nfa
+  (lambda (dfa states input)
+    (foldr (lambda ()
+           `() 
+           (filter
+            (lambda (edge)
+              (eq? (name (start edge)) state))
+            (edges dfa)))))
+
 
 ;(define nfa1
 ;  (make-automaton '(a b c d e)
