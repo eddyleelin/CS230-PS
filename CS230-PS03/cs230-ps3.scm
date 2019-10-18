@@ -278,13 +278,12 @@
     (letrec ((loop
              (lambda (state inputs)
                (cond ((null? inputs)
-                      (if (member? state (final-states dfa)) #t #f))
-                     ;((not (step-dfa dfa state (car inputs))) #f)
+                      (member? state (final-states dfa)))
                      (else
                       (loop (name (step-dfa dfa state (car inputs))) (cdr inputs)))))))
       (loop (start-state dfa) lst))))
                           
-         
+ `"Simulate-dfa:"
  (simulate-dfa dfa1 '(1 0 0 1)) ;==> #t
  (simulate-dfa dfa1 '(1 0 1 1)) ;==> #f
 
@@ -294,36 +293,38 @@
 	  (else (append (integer->binary (quotient n 2)) 
                         (list (if (even? n) 0 1)))))))
           
- (simulate-dfa dfa1 (integer->binary 12))
- (simulate-dfa dfa1 (integer->binary 10))
+ (simulate-dfa dfa1 (integer->binary 12)) ;==>#t
+ (simulate-dfa dfa1 (integer->binary 10)) ;==>#f
 
 ;; ----- Problem 5 -----
 (define step-nfa
   (lambda (dfa states input)
-    (foldr (lambda (edge l)
-             (if (= (label edge) input) (cons (finish edge) l)))
-           `() 
-           (foldr
-            (lambda (edge l)
-              (if (member? (name (start edge)) states) (cons edge l)))
-            `()
-            (edges dfa)))))
+    (let ((finishes (map finish (filter (lambda (edge)
+             (= (label edge) input))
+           (filter (lambda (edge)
+            (member? (name (start edge)) states))
+          (edges dfa))))))
+      (if (= (length finishes) 0) #f finishes))))
 
 
-;; THIS HASN'T BEEN CHANGED AT ALL SINCE SIMULATE-DFA
-;; THIS HASN'T BEEN CHANGED AT ALL SINCE SIMULATE-DFA
-;; THIS HASN'T BEEN CHANGED AT ALL SINCE SIMULATE-DFA
-;; THIS HASN'T BEEN CHANGED AT ALL SINCE SIMULATE-DFA
+; base case: inputs is null, have a list of states.
+;                       -> Compare states to see if any are final states
+;                             -> Take intersection of states and final states, check length
+; if inputs not null: rerun loop with new states being this step's final states
+
 (define simulate-nfa
   (lambda (dfa lst)
     (letrec ((loop
-             (lambda (state inputs)
+             (lambda (states inputs)
                (cond ((null? inputs)
-                      (if (member? state (final-states dfa)) #t #f))
+                      (not (= (length
+                               (intersection (name-vertices (vertices nfa1))
+                                             (final-states nfa1)))
+                              0))
                      ;((not (step-dfa dfa state (car inputs))) #f)
                      (else
                       (loop (name (step-dfa dfa state (car inputs))) (cdr inputs)))))))
-      (loop (start-state dfa) lst))))
+      (loop (start-state dfa) lst)))))
 
 (define nfa1
   (make-automaton '(a b c d e)
@@ -331,6 +332,11 @@
 	      (d d 0) (d d 1) (e e 0) (e e 1))
 	    'a
 	    '(d e)))
+
+(step-nfa nfa1 `(a b) 0) ;==>(a c)
+(step-nfa nfa1 `(f) 0) ;==> #f
+(step-nfa nfa1 '(b) 1) ;==>(d)
+(step-nfa nfa1 '(e e) 1) ;==> (e)
             
 ;; ----- Problem 6 -----
 
