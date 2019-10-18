@@ -255,7 +255,7 @@
                                 (eq? (name (start edge)) state))
                               (edges dfa)))))
       (if (not (= (length dfa-exits) 1)) #f
-          (finish (car dfa-exits))
+          (name (finish (car dfa-exits)))
           ))))
 
 (step-dfa dfa1 'c 1) ; ==> c
@@ -280,7 +280,7 @@
                (cond ((null? inputs)
                       (member? state (final-states dfa)))
                      (else
-                      (loop (name (step-dfa dfa state (car inputs))) (cdr inputs)))))))
+                      (loop (step-dfa dfa state (car inputs)) (cdr inputs)))))))
       (loop (start-state dfa) lst))))
                           
  `"Simulate-dfa:"
@@ -304,7 +304,7 @@
            (filter (lambda (edge)
             (member? (name (start edge)) states))
           (edges dfa))))))
-      (if (= (length finishes) 0) #f finishes))))
+      (if (= (length finishes) 0) #f (map name finishes)))))
 
 
 ; base case: inputs is null, have a list of states.
@@ -312,19 +312,27 @@
 ;                             -> Take intersection of states and final states, check length
 ; if inputs not null: rerun loop with new states being this step's final states
 
+(define convert-to-list
+  (lambda (var)
+    (if (list? var)
+        var
+        (list var))))
+
 (define simulate-nfa
   (lambda (dfa lst)
     (letrec ((loop
-             (lambda (states inputs)
+             (lambda (state-given inputs)
+               (let ((states (convert-to-list state-given)))
                (cond ((null? inputs)
                       (not (= (length
-                               (intersection (name-vertices (vertices nfa1))
-                                             (final-states nfa1)))
-                              0))
-                     ;((not (step-dfa dfa state (car inputs))) #f)
-                     (else
-                      (loop (name (step-dfa dfa state (car inputs))) (cdr inputs)))))))
-      (loop (start-state dfa) lst)))))
+                               (intersection states
+                                             (final-states dfa)))
+                              0)))
+                      ((not (list? states))
+                       (loop (step-nfa dfa `(states) (car inputs)) (cdr inputs)))
+                      (else
+                       (loop (step-nfa dfa states (car inputs)) (cdr inputs))))))))
+      (loop (start-state dfa) lst))))
 
 (define nfa1
   (make-automaton '(a b c d e)
@@ -333,24 +341,81 @@
 	    'a
 	    '(d e)))
 
+"step-nfa:"
 (step-nfa nfa1 `(a b) 0) ;==>(a c)
 (step-nfa nfa1 `(f) 0) ;==> #f
 (step-nfa nfa1 '(b) 1) ;==>(d)
 (step-nfa nfa1 '(e e) 1) ;==> (e)
+
+"simulate-nfa:"
+(simulate-nfa nfa1 `()) ;==>#f
+(simulate-nfa nfa1 `(0)) ;==>#f
+(simulate-nfa nfa1 `(1)) ;==>#f
+(simulate-nfa nfa1 `(0 1)) ;==>#f
+(simulate-nfa nfa1 `(1 1 1)) ;==>#t
+(simulate-nfa nfa1 `(1 1 1 1)) ;==>#t
+(simulate-nfa nfa1 `(1 1 1 0 0 0)) ;==>#t
             
 ;; ----- Problem 6 -----
+
+; step-graph returns a list of the vertex objects that can be accessed from the
+; current vertices passed to step-graph (including themselves)
+; param G: graph
+; param states: states (list of vertex objects)
+; param visited: visited vertices (list of vertex objects)
+; param des: destination vertex (vertex object)
+(define path-exits
+  (lambda (G states visited des)
+    ; -> check to see if any of the states are the destination, if so, return states
+    (cond [(member-vertices des states) states]
+          ; -> if not
+          [else
+           (let* ; add states to visited
+              ([new-visited (union visited states)]
+              ; find all possible exits...
+               [possible-exits (map finish (filter (lambda (edge) 
+                                          (member-vertices (start edge) states))
+                                        (edges G)))]
+              ; -> find set-diff-vertices between possible exits and visited
+              [unvisited (set-diff-vertices possible-exits new-visited)])
+              ; -> if the set-diff-vertices is empty, return states
+            (cond [(null? unvisited) states]
+                  [else
+                   ; -> else, add each one not in visited to states, rerun the computation
+                   (path-exits G (union new-visited unvisited) new-visited des)]))])))
+
+"path-exits:"
+(path-exits g1 (list (lookup-vertex 'a (vertices g1))) `() (lookup-vertex 'a (vertices g1)))
+(path-exits g1 (list (lookup-vertex 'a (vertices g1))) `() (lookup-vertex 'b (vertices g1)))
+(path-exits g1 (list (lookup-vertex 'a (vertices g1))) `() (lookup-vertex 'e (vertices g1)))
+(path-exits g1 (list (lookup-vertex 'e (vertices g1))) `() (lookup-vertex 'e (vertices g1)))
+(path-exits g1 (list (lookup-vertex 'e (vertices g1))) `() (lookup-vertex 'b (vertices g1)))
+
+
+(define path?
+  (lambda (ori-name des-name G)
+    (let* ([ori (lookup-vertex ori-name (vertices G))]
+          [des (lookup-vertex des-name (vertices G))]
+          [ori-list (list ori)]
+          [all-exits (path-exits G ori-list `() des)])
+      (cond [(boolean? (member-vertices des all-exits))
+             #f]
+            [else
+             #t]))))
 
 (define g2 (make-graph '(a b c) '((a b) (b a) (a c) (c a) (b c))))
 (define g3 (make-graph '(a b c d) '((a b) (b c) (a c) (c b) (d b))))
 (define g4 (make-graph '(a b c d) '((a b) (a c) (b a) (c a) (a d) (b c) (c b))))
 
-; (path? 'a 'e g1) ==> #t
-; (path? 'd 'a g1) ==> #f
-; (path? 'a 'c g2) ==> #t
-; (path? 'c 'b g2) ==> #t
-; (path? 'd 'd g3) ==> #t
-; (path? 'a 'd g3) ==> #f
-; (path? 'b 'd g4) ==> #t
+"path?:"
+ (path? 'a 'e g1) ;==> #t
+ (path? 'd 'a g1) ;==> #f
+ (path? 'a 'c g2) ;==> #t
+ (path? 'c 'b g2) ;==> #t
+ (path? 'd 'd g3) ;==> #t
+ (path? 'a 'd g3) ;==> #f
+ (path? 'b 'd g4) ;==> #t
+
 
 ;; ----- Problem 7 -----
 (defclass <vertex+parent> (<vertex>)
@@ -359,12 +424,37 @@
 (define make-vertex+parent
   (lambda (v p) ;v <vertex>, p <obj>                                                                                                                                               
     (make <vertex+parent> :name (name v) :parent p)))
+#|
 
-; (name-vertices (find-path 'a 'e g1)) ==> (a b e)
-; (find-path 'd 'a  g1)                   ==> #f
-; (name-vertices (find-path 'a 'c g2)) ==> (a c) or (a b c)
-; (name-vertices (find-path 'c 'b g2)) ==> (c a b)
-; (name-vertices (find-path 'd 'd g3)) ==> (d)
-; (find-path 'a 'd g3)                    ==> #f
-; (name-vertices (find-path 'b 'd g4)) ==> (b a d)
+(define (find-path ori-name des-name G)
+  (let ((ori (lookup-vertex ori-name (vertices G)))
+        (des (lookup-vertex des-name (vertices G))))
+    (display ori)
+  (cond
+    [(boolean? ori) #f]
+    [(equal-vertex? ori des) (list des)]
+    [else (local ((define possible-path 
+		    (find-path/list (exits ori G) des G)))
+	    (cond
+	      [(boolean? possible-path) #f]
+	      [else (cons ori possible-path)]))])))
+
+(define (find-path/list oris D G)
+  (cond
+    [(empty? oris) #f]
+    [else (local ((define possible-route (find-path (car oris) D G)))
+	    (cond
+	      [(boolean? possible-route) (find-path/list (cdr oris) D G)]
+	      [else possible-route]))]))
+
+
+find-path:
+(name-vertices (find-path 'a 'e g1)) ;==> (a b e)
+(find-path 'd 'a  g1)                   ;==> #f
+(name-vertices (find-path 'a 'c g2)) ;==> (a c) or (a b c)
+(name-vertices (find-path 'c 'b g2)) ;==> (c a b)
+(name-vertices (find-path 'd 'd g3)) ;==> (d)
+(find-path 'a 'd g3)                 ;   ==> #f
+(name-vertices (find-path 'b 'd g4)) ;==> (b a d)
+|#
 
