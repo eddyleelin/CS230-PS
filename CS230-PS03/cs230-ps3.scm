@@ -424,31 +424,61 @@
 (define make-vertex+parent
   (lambda (v p) ;v <vertex>, p <obj>                                                                                                                                               
     (make <vertex+parent> :name (name v) :parent p)))
-#|
 
-(define (find-path ori-name des-name G)
-  (let ((ori (lookup-vertex ori-name (vertices G)))
-        (des (lookup-vertex des-name (vertices G))))
+; find-path returns the path (as a list) from the origin to the destination,
+; if there is one. Otherwise, it returns #f.
+(define find-path
+  (lambda (ori-name des-name G)
+    (find-path-helper ori-name des-name G `())))
+
+
+; find-path-helper performs the bulk of find-path, with a visited parameter
+; param visited: a list of vertex objects that have been visited
+(define (find-path-helper ori-name des-name G visited)
+  (let* ; ori, des be the names of the vertex objects
+      ((ori (lookup-vertex ori-name (vertices G)))
+       (des (lookup-vertex des-name (vertices G)))
+       [new-visited (union visited (list ori))])
     (display ori)
-  (cond
-    [(boolean? ori) #f]
-    [(equal-vertex? ori des) (list des)]
-    [else (local ((define possible-path 
-		    (find-path/list (exits ori G) des G)))
-	    (cond
-	      [(boolean? possible-path) #f]
-	      [else (cons ori possible-path)]))])))
+    (cond
+      ; if the origin is the destination, return it
+      [(equal-vertex? ori des) (list des)]
+      ; otherwise, check if there's a valid path on each exit of ori
+      [else
+       (let ([new-vertices (set-diff-vertices (exits ori G) new-visited)])
+         (cond
+           [(null? new-vertices) #f]
+           [(not new-vertices) #f]
+           [(not (car new-vertices)) #f]
+           [else
+            (let ([possible-path
+                   (path-list (set-diff-vertices (exits ori G) new-visited) des G new-visited)])
+              (cond ; then,
+                ; check if possible-path is #f (a boolean), if so, return #f
+                [(boolean? possible-path) #f]
+                [else (cons ori possible-path)]))]))])))
 
-(define (find-path/list oris D G)
-  (cond
-    [(empty? oris) #f]
-    [else (local ((define possible-route (find-path (car oris) D G)))
-	    (cond
-	      [(boolean? possible-route) (find-path/list (cdr oris) D G)]
-	      [else possible-route]))]))
+; given multiple starting states, determine if there is a path.
+; Return such a path if it exists. If not, return #f
+(define path-list
+  (lambda (oris D G visited)
+    (let ([new-visited (union visited oris)])
+      (display "\n")
+      (display new-visited)
+    (cond
+      [(empty? oris) #f]
+      [else
+       (display "got here!\n")
+       (display (find-path-helper (list (car oris)) D G new-visited))
+       (let ([possible-route
+              (find-path-helper (list (car oris)) D G new-visited)])
+         (cond
+           [(boolean? possible-route) (path-list (cdr oris) D G new-visited)]
+           [else possible-route]))]))))
 
 
-find-path:
+
+"find-path:"
 (name-vertices (find-path 'a 'e g1)) ;==> (a b e)
 (find-path 'd 'a  g1)                   ;==> #f
 (name-vertices (find-path 'a 'c g2)) ;==> (a c) or (a b c)
@@ -456,5 +486,4 @@ find-path:
 (name-vertices (find-path 'd 'd g3)) ;==> (d)
 (find-path 'a 'd g3)                 ;   ==> #f
 (name-vertices (find-path 'b 'd g4)) ;==> (b a d)
-|#
 
