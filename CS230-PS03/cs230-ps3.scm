@@ -482,3 +482,83 @@
 (find-path 'a 'd g3)                 ;   ==> #f
 (name-vertices (find-path 'b 'd g4)) ;==> (b a d)
 
+;; ---- Extra Credit ----
+
+(define make-dfa
+  (lambda (v-names e-list s-state f-states) ;v-names <list>, e-list <list>, s-state <symbol>, f-states <list>
+    (let* ((v (map make-vertex v-names))
+           (create-labeled-edge 
+              (lambda (name1 name2 label)
+                (make-labeled-edge (lookup-vertex name1 v) 
+                                   (lookup-vertex name2 v) 
+                                   label)))
+           [edgelist (map create-labeled-edge
+                        (map first e-list)
+                        (map second e-list)
+                        (map third e-list))])
+      (cond [(not (verify-edges edgelist)) #f] ; check if edges are not dfa
+            [else
+             (make <automaton>
+            :vertices v
+            :edges 
+            :start-state s-state
+            :final-states f-states)]))))
+
+; returns #t if edges are dfa, #f if not
+; param edges: list of edges
+(define verify-edges
+  (lambda (edges)
+    (let* ([nedges (length edges)] ; count number of edges
+      ; add every edge to a set, only if the set does not already contain the start and input
+           [new-edges (add-edge edges `())])
+      (not (boolean? new-edges)))))
+
+; add every edge to a set, only if the set does not already contain the start and input
+; param edges: list of edges
+; param seen: list of edges already seen
+; return: list of edges
+
+(define add-edge
+  (lambda (edges lst)
+    ; add every unique edge to seen
+    (foldr (lambda (new seen)
+             (cond [(boolean? seen) #f]
+                   [else
+                    (let* ([input (label new)]
+                           ; filter seen to see if anything matches new input
+                           ; if so, return #f
+                           [seen-matches (filter (lambda (edge)
+                                                   (= (label edge) input))
+                                                 (filter (lambda (edge)
+                                                           (equal-vertex? (start edge) (start new)))
+                                                         seen))])
+                      (cond [(null? seen-matches) (cons new seen)]
+                            [else #f]))]))
+           lst edges)))
+    
+
+; dfa1 ==> #<automaton>
+(make-dfa '(a b c) 
+	    '((a a 0) (a b 1) (b a 1) (b c 0) (c b 0) (c c 1))
+            'a '(a))
+
+; df2 ==> #<automaton>
+(make-dfa '(a b c d e) 
+	    '((a b 1) (b a 1) (b c 0) (c b 0) (c c 1) (d e 2) (d f 9))
+            'a '(a))
+
+; df3 ==> #f
+(make-dfa '(a b c d e) 
+	    '((a b 1) (b a 1) (b c 0) (c b 0) (c c 1) (d e 2) (d f 2))
+            'a '(a))
+
+; bad-dfa ==> #f
+(make-dfa '(a b c) 
+ 	    '((a a 0) (a b 0) (b a 1) (b c 0) (c b 0) (c c 1))
+            'a '(a))
+;nfa1 ==> #f
+(make-dfa '(a b c d e)
+	    '((a a 0) (a a 1) (a b 1) (a c 0) (b d 1) (c e 0)
+	      (d d 0) (d d 1) (e e 0) (e e 1))
+	    'a
+	    '(d e))
