@@ -429,17 +429,16 @@
 ; if there is one. Otherwise, it returns #f.
 (define find-path
   (lambda (ori-name des-name G)
-    (find-path-helper ori-name des-name G `())))
+    (let* ([ori (lookup-vertex ori-name (vertices G))]
+           [des (lookup-vertex des-name (vertices G))])
+    (find-path-helper ori des G `()))))
 
 
 ; find-path-helper performs the bulk of find-path, with a visited parameter
 ; param visited: a list of vertex objects that have been visited
-(define (find-path-helper ori-name des-name G visited)
+(define (find-path-helper ori des G visited)
   (let* ; ori, des be the names of the vertex objects
-      ((ori (lookup-vertex ori-name (vertices G)))
-       (des (lookup-vertex des-name (vertices G)))
-       [new-visited (union visited (list ori))])
-    (display ori)
+      ([new-visited (union visited (list ori))])
     (cond
       ; if the origin is the destination, return it
       [(equal-vertex? ori des) (list des)]
@@ -463,15 +462,11 @@
 (define path-list
   (lambda (oris D G visited)
     (let ([new-visited (union visited oris)])
-      (display "\n")
-      (display new-visited)
     (cond
       [(empty? oris) #f]
       [else
-       (display "got here!\n")
-       (display (find-path-helper (list (car oris)) D G new-visited))
        (let ([possible-route
-              (find-path-helper (list (car oris)) D G new-visited)])
+              (find-path-helper (car oris) D G new-visited)])
          (cond
            [(boolean? possible-route) (path-list (cdr oris) D G new-visited)]
            [else possible-route]))]))))
