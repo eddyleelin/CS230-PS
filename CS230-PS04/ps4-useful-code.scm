@@ -99,7 +99,7 @@
 ;; Triangular numbers
 
 (define triangular
-  (stream-cons 1 (add-streams (add-streams ones integers) triangular)))
+  (stream-cons 3 (add-streams (add-streams (scale-stream ones 2) integers) triangular)))
 
 (stream->listn triangular 20)
 ; ==> (3 6 10 15 21 28 36 45 55 66 78 91 105 120 136 153 171 190 210 231)
@@ -114,6 +114,28 @@
 
 (stream->listn hexagonal 20)
 ; ==> (6 15 28 45 66 91 120 153 190 231 276 325 378 435 496 561 630 703 780 861)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; triangular-and-hexagonal numbers
+
+(define triangular-and-hexagonal
+  hexagonal)
+
+(stream->listn triangular-and-hexagonal 20)
+; ==> (6 15 28 45 66 91 120 153 190 231 276 325 378 435 496 561 630 703 780 861)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; triangular-not-hexagonal numbers
+
+(define triangular-not-hexagonal
+  (stream-cons 10 (add-streams (add-streams (scale-stream ones 7) (scale-stream integers 4)) triangular-not-hexagonal)))
+
+(stream->listn triangular-not-hexagonal 20)
+; ==> (10 21 36 55 78 105 136 171 210 253 300 351 406 465 528 595 666 741 820 903)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 
