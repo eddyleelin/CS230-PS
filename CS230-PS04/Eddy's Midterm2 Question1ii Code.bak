@@ -1,0 +1,18 @@
+(require racket/base)
+(require racket/stream)
+
+
+(define powerlist
+  (lambda ((l <list>))
+    (foldr (lambda (e lst)
+             (append
+              (map (lambda (lst1)
+                     (cons e lst1))
+                   lst)
+              lst))
+           `(())
+           l)))
+
+(define lst `(1 2 3 4 5))
+
+(powerlist lst)
