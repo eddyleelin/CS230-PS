@@ -100,6 +100,107 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Problem 4
+
+(define diag
+  (lambda (A)
+    (foldr (lambda (el lst)
+             (cons (list el el) lst))
+           `()
+           A)))
+             
+(display "diag:\n")
+(diag alist)
+; ==> ((1 1) (2 2) (3 3) (4 4) (5 5))
+(diag blist)
+; ==> ((6 6) (7 7) (8 8))
+(diag `(10 20 30 40 50))
+; ==> ((10 10) (20 20) (30 30) (40 40) (50 50))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Problem 5
+
+(define diag?
+  (lambda (D)
+    (cond
+      [(null? D) #t]
+      [(not (= (caar D) (cadar D)))
+       #f]
+      [else
+       (diag? (cdr D))])))
+
+(display "diag?:\n")
+(display "  #t tests:\n")
+(diag? (diag alist))
+; ==> #t
+(diag? (diag blist))
+; ==> #t
+(diag? (diag `(10 20 30 40 50)))
+; ==> #t
+(diag? `((1 1) (2 2) (3 3) (4 4)))
+; ==> #t
+(display "  #f tests:\n")
+(diag? `((0 1)))
+; ==> #f
+(diag? `((1 2)))
+; ==> #f
+(diag? `((1 1) (2 2) (3 3) (4 4) (5 6)))
+; ==> #f
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Problem 6
+
+(define diag-inv
+  (lambda (Delta)
+    (foldr
+     (lambda (elem lst)
+       (cons (car elem) lst))
+     `()
+     Delta)))
+
+(display "diag-inv:\n")
+(diag-inv (diag alist))
+; ==> (1 2 3 4 5)
+(diag-inv (diag blist))
+; ==> (6 7 8)
+(diag-inv (diag `(10 20 30 40 50)))
+; ==> (10 20 30 40 50)
+(diag-inv `((1 1) (2 2) (3 3) (4 4)))
+; ==> (1 2 3 4)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Problem 7
+
+(define powerset
+  (lambda (A)
+    (foldr (lambda (elem lst)
+             (append
+              (map (lambda (lst1)
+                     (cons elem lst1))
+                   lst)
+              lst))
+           `(())
+           A)))
+
+(display "powerset:\n")
+(powerset blist)
+; ==> ((6 7 8) (6 7) (6 8) (6) (7 8) (7) (8) ())
+(powerset `(1))
+; ==> ((1) ())
+(powerset `(1 2))
+; ==> ((1 2) (1) (2) ())
+(powerset `(1 2 3))
+; ==> ((1 2 3) (1 2) (1 3) (1) (2 3) (2) (3) ())
+(powerset `(1 2 3 4))
+; ==> ((1 2 3 4) (1 2 3) (1 2 4) (1 2) (1 3 4) (1 3) (1 4) (1) (2 3 4) (2 3) (2 4) (2) (3 4) (3) (4) ())
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 
 
