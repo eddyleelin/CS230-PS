@@ -176,28 +176,138 @@
   (lambda (A)
     (foldr (lambda (elem lst)
              (append
+              lst
               (map (lambda (lst1)
                      (cons elem lst1))
-                   lst)
-              lst))
+                   lst)))
            `(())
            A)))
 
 (display "powerset:\n")
 (powerset blist)
-; ==> ((6 7 8) (6 7) (6 8) (6) (7 8) (7) (8) ())
+; ==> (() (8) (7) (7 8) (6) (6 8) (6 7) (6 7 8))
 (powerset `(1))
-; ==> ((1) ())
+; ==> (() (1))
 (powerset `(1 2))
-; ==> ((1 2) (1) (2) ())
+; ==> (() (2) (1) (1 2))
 (powerset `(1 2 3))
-; ==> ((1 2 3) (1 2) (1 3) (1) (2 3) (2) (3) ())
+; ==> (() (3) (2) (2 3) (1) (1 3) (1 2) (1 2 3))
 (powerset `(1 2 3 4))
-; ==> ((1 2 3 4) (1 2 3) (1 2 4) (1 2) (1 3 4) (1 3) (1 4) (1) (2 3 4) (2 3) (2 4) (2) (3 4) (3) (4) ())
+; ==> (() (4) (3) (3 4) (2) (2 4) (2 3) (2 3 4) (1) (1 4) (1 3) (1 3 4) (1 2) (1 2 4) (1 2 3) (1 2 3 4))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Part Two
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Stream Definitions to Help
+(define ones (stream-cons 1 ones))
+(define add-streams 
+  (lambda ((a <stream>) (b <stream>))
+    (cond ((stream-empty? a) b)
+          ((stream-empty? b) a)
+          (else (stream-cons (+ (stream-first a) (stream-first b))
+                                (add-streams (stream-rest a) (stream-rest b)))))))
+
+(define scale-stream
+  (lambda ((s <stream>) (factor <number>))
+    (stream-map (lambda (x) (* x factor)) s)))
+
+(define print-crlf 
+  (lambda ()
+    (printf "
+")))
+
+(define print-stream 
+  (lambda ((s <stream>) (n <integer>))
+    (cond ((zero? n) (printf "..."))
+          (else  (print (stream-first s))
+                 (printf " ")
+                 (print-stream (stream-rest s) (- n 1))))))
+
+(define stream-null?
+  (let ((end-of-stream?
+          (lambda (x)
+            (eq? x "end of stream"))))
+    (compose end-of-stream? stream-first)))
+
+(define stream-cdr
+  stream-rest)
+
+
+;(print-stream ones 10)
+;(print-stream (add-streams ones ones) 10)
+(define integers (stream-cons 1 (add-streams ones integers)))
+;(print-stream integers 100)
+
+;; this is just like print-stream which is how Bruce Donald wrote it
+(define stream->listn
+  (lambda ((s <stream>) (n <integer>))
+    (cond ((or (zero? n) (stream-empty? s)) '())
+          (else (cons (stream-first s)
+                      (stream->listn (stream-rest s) (- n 1)))))))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Problem II-1
+
+(define flatten
+  (lambda (A)
+    ; if the first element of the stream A is a list with only one value,
+    (cond [(null? (cdr (stream-first A)))
+           ; cons the list element...
+           (stream-cons (car (stream-first A))
+                         ; to the rest of the stream A
+                        (flatten (stream-rest A)))]
+          ; otherwise, if (stream-first A) is a list of more than one ordered pair...
+          [else
+           ; cons the list element...
+           (stream-cons (car (stream-first A))
+                        ; to the flattened stream with...
+                        (flatten
+                         ; the first pair of the first list removed
+                         (stream-cons (cdr (stream-first A))
+                                      ; and the rest of the stream
+                                      (stream-rest A))))]))) 
+
+(define stream-cart
+  (lambda (A B)
+    ; count up i as all integers starting from 1.
+    (flatten (for/stream ([i integers])
+                ; count up k starting from 1 to i.
+                 (for/list ([k (stream->listn integers i)])
+                   ; get A[k-1], starting from 0 and going up
+                   (list (stream-ref A (- k 1))
+                         ; get B[i-k], starting from i and going down
+                         (stream-ref B (- i k)))))))) 
+
+(display "stream-cart:\n")
+(define triangular
+  (stream-cons 3 (add-streams (add-streams (scale-stream ones 2) integers) triangular)))
+(define fibs 
+  (stream-cons 0
+               (stream-cons 1
+                            (add-streams fibs (stream-rest fibs)))))
+
+(stream->listn (stream-cart integers integers) 20)
+; ==> ((1 1) (1 2) (2 1) (1 3) (2 2) (3 1) (1 4) (2 3) (3 2) (4 1) (1 5) (2 4) (3 3) (4 2) (5 1) (1 6) (2 5) (3 4) (4 3) (5 2))
+(stream->listn (stream-cart ones integers) 20) ; note: ones is not a set, but it is a stream
+; ==> ((1 1) (1 2) (1 1) (1 3) (1 2) (1 1) (1 4) (1 3) (1 2) (1 1) (1 5) (1 4) (1 3) (1 2) (1 1) (1 6) (1 5) (1 4) (1 3) (1 2))
+(stream->listn (stream-cart integers fibs) 20) ; note: fibs is not a set, but it is a stream
+; ==> ((1 0) (1 1) (2 0) (1 1) (2 1) (3 0) (1 2) (2 1) (3 1) (4 0) (1 3) (2 2) (3 1) (4 1) (5 0) (1 5) (2 3) (3 2) (4 1) (5 1))
+(stream->listn (stream-cart ones fibs) 20)
+; ==> ((1 0) (1 1) (1 0) (1 1) (1 1) (1 0) (1 2) (1 1) (1 1) (1 0) (1 3) (1 2) (1 1) (1 1) (1 0) (1 5) (1 3) (1 2) (1 1) (1 1))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
