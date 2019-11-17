@@ -303,6 +303,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Problem II-3
 
+(define stream-member?
+  (lambda (val S)
+    (not (stream-null? (stream-filter (lambda (elem)
+                     (= elem val))
+                   S)))))
+
+; now implement stream-member? in the call to stream-pi1 and stream-pi2 !!!!
+;;; NOT DONE YET
+;;; NOT DONE YET
 (define stream-pi1
   (lambda (S)
     (stream-cons (car (stream-first S))
@@ -315,7 +324,7 @@
 
 (display "stream-pi1:\n")
 (stream->listn (stream-pi1 (stream-cart integers integers)) 10)
-; ==> (1 2 3 4)
+; ==> (1 2 3 4 5 6 7 8 9 10)
 (stream->listn (stream-pi1 (stream-cart integers (scale-stream integers 2))) 10)
 ; ==> (1 2 3 4)
 (stream-pi1 (Cart ones blist))
