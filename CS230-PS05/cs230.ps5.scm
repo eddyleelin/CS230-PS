@@ -297,13 +297,41 @@
 ; ==> ((1 1) (1 2) (1 1) (1 3) (1 2) (1 1) (1 4) (1 3) (1 2) (1 1) (1 5) (1 4) (1 3) (1 2) (1 1) (1 6) (1 5) (1 4) (1 3) (1 2))
 (stream->listn (stream-cart integers fibs) 20) ; note: fibs is not a set, but it is a stream
 ; ==> ((1 0) (1 1) (2 0) (1 1) (2 1) (3 0) (1 2) (2 1) (3 1) (4 0) (1 3) (2 2) (3 1) (4 1) (5 0) (1 5) (2 3) (3 2) (4 1) (5 1))
-(stream->listn (stream-cart ones fibs) 20)
+(stream->listn (stream-cart triangular fibs) 20)
 ; ==> ((1 0) (1 1) (1 0) (1 1) (1 1) (1 0) (1 2) (1 1) (1 1) (1 0) (1 3) (1 2) (1 1) (1 1) (1 0) (1 5) (1 3) (1 2) (1 1) (1 1))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; 
+;; Problem II-3
 
+(define stream-pi1
+  (lambda (S)
+    (stream-cons (car (stream-first S))
+                 (stream-pi1 (stream-rest S)))))
 
+(define stream-pi2
+  (lambda (S)
+    (stream-cons (cadr (stream-first S))
+                 (stream-pi2 (stream-rest S)))))
+
+(display "stream-pi1:\n")
+(stream->listn (stream-pi1 (stream-cart integers integers)) 10)
+; ==> (1 2 3 4)
+(stream->listn (stream-pi1 (stream-cart integers (scale-stream integers 2))) 10)
+; ==> (1 2 3 4)
+(stream-pi1 (Cart ones blist))
+; ==> (1 2 3 4 5)
+(stream-pi1 (Cart `(1 2 2) blist))
+; ==> (1 2)
+
+(display "stream-pi2:\n")
+(stream-pi2 `((1 2) (2 4) (3 6) (4 8)))
+; ==> (2 4 6 8)
+(stream-pi2 `((1 2) (2 4) (3 6) (4 6)))
+; ==> (2 4 6)
+(stream-pi2 (Cart alist blist))
+; ==> (6 7 8)
+(stream-pi2 (Cart `(1 2 2) blist))
+; ==> (6 7 8)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
