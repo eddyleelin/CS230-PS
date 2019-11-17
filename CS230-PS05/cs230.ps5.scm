@@ -305,57 +305,150 @@
 
 (define stream-member?
   (lambda (val S)
-    (not (stream-null? (stream-filter (lambda (elem)
+    (not (= (stream-count (lambda (elem)
                      (= elem val))
-                   S)))))
+                   S)
+            0))))
 
-; now implement stream-member? in the call to stream-pi1 and stream-pi2 !!!!
-;;; NOT DONE YET
-;;; NOT DONE YET
 (define stream-pi1
   (lambda (S)
-    (stream-cons (car (stream-first S))
-                 (stream-pi1 (stream-rest S)))))
-
+    (let ((proj (lambda (set_elem)
+                  (car set_elem))))
+      (stream-cons (proj (stream-first S))
+                   (stream-filter
+                    (lambda (val)
+                      (if val #t #f))
+                    (for/stream ([i integers])
+                      ; if val is a member in a pair before i
+                      (if
+                       (stream-member?
+                        ; val is equal to S[i]
+                        (stream-ref (stream-map proj S) i)
+                        ; take first values of S up to (but excluding) S[i]
+                        (stream-take (stream-map proj S) i))
+                       ; do not add to stream
+                       #f
+                       (stream-ref (stream-map proj S) i))))))))
+                       
 (define stream-pi2
   (lambda (S)
-    (stream-cons (cadr (stream-first S))
-                 (stream-pi2 (stream-rest S)))))
+    (let ((proj (lambda (set_elem)
+                  (cadr set_elem))))
+      (stream-cons (proj (stream-first S))
+                   (stream-filter
+                    (lambda (val)
+                      (if val #t #f))
+                    (for/stream ([i integers])
+                      ; if val is a member in a pair before i
+                      (if
+                       (stream-member?
+                        ; val is equal to S[i]
+                        (stream-ref (stream-map proj S) i)
+                        ; take first values of S up to (but excluding) S[i]
+                        (stream-take (stream-map proj S) i))
+                       ; do not add to stream
+                       #f
+                       (stream-ref (stream-map proj S) i))))))))
 
-(display "stream-pi1:\n")
+; infinite test case: (1 1) (1 2) (1 3) (1 4)...
+(define infinite-test
+  (stream-map (lambda (set_elem)
+                (list 1 set_elem))
+              integers))
+
+(displayln "stream-pi1:")
 (stream->listn (stream-pi1 (stream-cart integers integers)) 10)
 ; ==> (1 2 3 4 5 6 7 8 9 10)
 (stream->listn (stream-pi1 (stream-cart integers (scale-stream integers 2))) 10)
-; ==> (1 2 3 4)
-(stream-pi1 (Cart ones blist))
-; ==> (1 2 3 4 5)
-(stream-pi1 (Cart `(1 2 2) blist))
-; ==> (1 2)
+; ==> (1 2 3 4 5 6 7 8 9 10)
+(stream->listn (stream-pi1 (stream-cart (scale-stream integers 2) integers)) 10)
+; ==> (2 4 6 8 10 12 14 16 18 20)
+(stream->listn (stream-pi1 (stream-cart integers (stream-tail fibs 2))) 10)
+; ==> (1 2 3 4 5 6 7 8 9 10)
+(stream->listn (stream-pi1 infinite-test) 1) ; this stream only has one value (which is 1)!
+; ==> (1)
 
-(display "stream-pi2:\n")
-(stream-pi2 `((1 2) (2 4) (3 6) (4 8)))
-; ==> (2 4 6 8)
-(stream-pi2 `((1 2) (2 4) (3 6) (4 6)))
-; ==> (2 4 6)
-(stream-pi2 (Cart alist blist))
-; ==> (6 7 8)
-(stream-pi2 (Cart `(1 2 2) blist))
-; ==> (6 7 8)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-
-
+(displayln "stream-pi2:")
+(stream->listn (stream-pi2 (stream-cart integers integers)) 10)
+; ==> (1 2 3 4 5 6 7 8 9 10)
+(stream->listn (stream-pi2 (stream-cart integers (scale-stream integers 2))) 10)
+; ==> (2 4 6 8 10 12 14 16 18 20)
+(stream->listn (stream-pi2 (stream-cart (scale-stream integers 2) integers)) 10)
+; ==> (1 2 3 4 5 6 7 8 9 10)
+(stream->listn (stream-pi2 (stream-cart integers (stream-tail fibs 2))) 10)
+; ==> (1 2 3 5 8 13 21 34 55 89)
+(stream->listn (stream-pi2 infinite-test) 10)
+; ==> (1 2 3 4 5 6 7 8 9 10)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
+;; Problem II-4
 
+(define stream-diag
+  (lambda (A)
+    (stream-map (lambda (elem)
+                  (list elem elem))
+                A)))
 
+(display "stream-diag:\n")
+(stream->listn (stream-diag integers) 10)
+; ==> ((1 1) (2 2) (3 3) (4 4) (5 5) (6 6) (7 7) (8 8) (9 9) (10 10))
+(stream->listn (stream-diag (stream-tail fibs 2)) 10) ; using fibs[2:], a set
+; ==> ((1 1) (2 2) (3 3) (5 5) (8 8) (13 13) (21 21) (34 34) (55 55) (89 89))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
+;; Problem II-6
+
+(define stream-diag-inv
+  (lambda (Delta)
+    (stream-map car Delta)))
+
+(displayln "stream-diag-inv:")
+
+(stream->listn (stream-diag-inv (stream-diag integers)) 20)
+; ==> (1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
+(stream->listn (stream-diag-inv (stream-diag (stream-tail fibs 2))) 20) ; using fibs[2:], a set
+; ==> (1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181 6765 10946)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Problem II-7e
+
+; stream-powerset-with-i returns a stream of all sublists of S[0:i] that...
+; ... contain S[i]
+; input S: stream to get power set
+; input i: index of stream to be in power set
+; return a list of elements of P(S[0:i]) containing S[i]
+(define stream-powerset-with-i
+  (lambda (S i) ; S is set, return a stream of only elements of...
+    ; ... the power set P(S[0:i]) that contain S[i]
+     (map
+      ; append S[i to every element of...
+      (lambda (elem) ; elem is element of P(S[0:i-1])
+        (cons (stream-ref S (- i 1)) elem))
+      ; powerset of S[0:i-1],
+      (powerset (stream->listn S (- i 1))))))
+
+
+;(stream-powerset-with-i integers 4)
+; ==> ((4) (4 3) (4 2) (4 2 3) (4 1) (4 1 3) (4 1 2) (4 1 2 3))
+
+; stream-powerset creates the infinite power set of a infinite set...
+; ... A, starting with `(), and performing (cons i elem), where elem...
+; ... is an element of the power set of A[0:i-1], where i is the ...
+; ... index of S, to get S[i], starting from i=1 to infinity.
+; input A: stream to make power set from
+; returns a stream representing the infinite power set in the above order.
+(define stream-powerset
+  (lambda (A)
+    (stream-cons
+     `()
+     (flatten 
+      (for/stream ([i integers])
+        (stream-powerset-with-i A i))))))
+
+(displayln "stream-powerset:")
+(stream->listn (stream-powerset integers) 20)
+; ==> (() (1) (2) (2 1) (3) (3 2) (3 1) (3 1 2) (4) (4 3) (4 2) (4 2 3) (4 1) (4 1 3) (4 1 2) (4 1 2 3) (5) (5 4) (5 3) (5 3 4))
+(stream->listn (stream-powerset (scale-stream integers 2)) 20)
+; ==> (() (2) (4) (4 2) (6) (6 4) (6 2) (6 2 4) (8) (8 6) (8 4) (8 4 6) (8 2) (8 2 6) (8 2 4) (8 2 4 6) (10) (10 8) (10 6) (10 6 8))
+(stream->listn (stream-powerset (stream-tail fibs 2)) 20) ; using fibs[2:], a set
+; ==> (() (1) (2) (2 1) (3) (3 2) (3 1) (3 1 2) (5) (5 3) (5 2) (5 2 3) (5 1) (5 1 3) (5 1 2) (5 1 2 3) (8) (8 5) (8 3) (8 3 5))
