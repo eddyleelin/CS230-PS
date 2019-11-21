@@ -1,0 +1,18 @@
+(require racket/base)
+
+(define turing-reduce
+  (lambda (f a)
+    (list (lambda () (f a) p))))
+
+(define safe?
+  (lambda (f a)
+    (apply poly-safe? (turing-reduce f a))))
+
+(define turing-reduce-2
+  (lambda (f a)
+    (list (eval (lambda () (f a) 0)))))
+
+(define safe?-2
+  (lambda (f a)
+    (apply expr=zero? (turing-reduce-2 f a))))
+          
